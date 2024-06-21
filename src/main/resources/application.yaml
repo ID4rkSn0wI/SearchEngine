@@ -1,0 +1,32 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    username: root
+    password: testtest
+    url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true&characterEncoding=utf8
+  jpa:
+    hibernate:
+      ddl-auto: update
+      naming:
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: false
+
+config:
+  request-properties:
+    referrer: http://www.google.com
+  time-between-requests: 500
+  amount-of-words: 8
+
+indexing-settings:
+  sites:
+    - url: https://www.svetlovka.ru
+      name: Светловка
+#    - url: https://skillbox.ru
+#      name: Skillbox
+#    - url: https://lenta.ru
+#      name: Лента.ру
+#    - url: https://playback.ru
+#      name: PlayBack.Ru
