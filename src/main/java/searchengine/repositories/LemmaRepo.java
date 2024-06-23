@@ -10,7 +10,7 @@ import java.util.Collection;
 import java.util.List;
 
 public interface LemmaRepo extends JpaRepository<Lemma, Integer> {
-    @Query(value = "SELECT l FROM Lemma as l WHERE l.lemma=:lemma and l.site_id=:siteId", nativeQuery = true)
+    @Query(value = "SELECT * FROM Lemma WHERE Lemma.lemma=:lemma and Lemma.site_id=:siteId", nativeQuery = true)
     Lemma findLemmaDtoByLemmaAndSiteId(String lemma, int siteId);
 
     @Query(value = "SELECT COUNT(*) FROM Lemma WHERE Lemma.site_id=:siteId", nativeQuery = true)

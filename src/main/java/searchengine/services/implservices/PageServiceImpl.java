@@ -2,11 +2,12 @@ package searchengine.services.implservices;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.stereotype.Service;
 import searchengine.dto.indexing.PageDto;
 import searchengine.model.Page;
 import searchengine.repositories.PageRepo;
-import searchengine.services.Iservices.PageService;
+import searchengine.services.indexing_services.PageService;
 
 import java.util.Collection;
 
@@ -26,7 +27,6 @@ public class PageServiceImpl implements PageService<PageDto> {
 
     @Override
     public Collection<PageDto> getAll() {
-        log.info("Getting all pages");
         return pageRepo.findAll()
                 .stream()
                 .map(PageServiceImpl::mapToDto)
@@ -66,9 +66,7 @@ public class PageServiceImpl implements PageService<PageDto> {
 
     @Override
     public Integer findIdByPathAndSiteId(String path, int siteId) {
-        Integer id = pageRepo.findIdByPathAndSiteId(path, siteId);
-        log.info("Finding page with path: {} and site id: {} and got {}", path, siteId, id);
-        return id;
+        return pageRepo.findIdByPathAndSiteId(path, siteId);
     }
 
     @Override

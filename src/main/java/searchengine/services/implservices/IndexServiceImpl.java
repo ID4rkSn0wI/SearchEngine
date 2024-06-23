@@ -14,7 +14,7 @@ import java.util.Set;
 @Slf4j
 @RequiredArgsConstructor
 @Service
-public class IndexServiceImpl implements searchengine.services.Iservices.IndexService<IndexDto> {
+public class IndexServiceImpl implements searchengine.services.indexing_services.IndexService<IndexDto> {
     private final IndexRepo indexRepo;
 
     @Override

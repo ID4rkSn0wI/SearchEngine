@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import searchengine.dto.indexing.LemmaDto;
 import searchengine.model.Lemma;
 import searchengine.repositories.LemmaRepo;
-import searchengine.services.Iservices.LemmaService;
+import searchengine.services.indexing_services.LemmaService;
 
 import java.util.ArrayList;
 import java.util.Collection;

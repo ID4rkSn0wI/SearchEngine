@@ -1,4 +1,4 @@
-package searchengine.services.Iservices;
+package searchengine.services.indexing_services;
 
 import java.util.Collection;
 import java.util.List;

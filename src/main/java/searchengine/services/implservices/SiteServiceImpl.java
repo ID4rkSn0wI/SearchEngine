@@ -7,7 +7,7 @@ import searchengine.dto.indexing.SiteDto;
 import searchengine.model.Site;
 import searchengine.repositories.PageRepo;
 import searchengine.repositories.SiteRepo;
-import searchengine.services.Iservices.SiteService;
+import searchengine.services.indexing_services.SiteService;
 
 import java.util.Collection;
 

@@ -72,30 +72,7 @@ public class ApiController {
         DefaultAnswer defaultAnswer = new DefaultAnswer();
         if (!runIndexing.getRunning()) {
             runIndexing.setRunning(true);
-            Thread thread = new Thread(() -> {
-                clearDataService.clearTables();
-                log.info("Starting indexing");
-                Set<Thread> threads = new HashSet<>(0);
-                for (Site site : sites) {
-                    String siteUrl = site.getUrl();
-                    String siteTitle = site.getName();
-                    Runnable task = () -> {
-                        runIndexing.runIndexing(siteUrl, siteTitle);
-                    };
-                    Thread thread1 = new Thread(task, siteUrl);
-                    thread1.start();
-                    threads.add(thread1);
-                }
-                threads.forEach(t -> {
-                    try {
-                        t.join();
-                    } catch (InterruptedException ignored) {
-                        log.error("Thread interrupted");
-                    }
-                });
-                log.info("Threads: {} finished", threads.size());
-                runIndexing.setRunning(false);
-            });
+            Thread thread = new StartIndexingThread();
             thread.start();
             defaultAnswer.setResult(true);
             return new ResponseEntity<>(defaultAnswer, HttpStatus.OK);
@@ -195,5 +172,33 @@ public class ApiController {
         item.setStatus(Status.INDEXING);
         item.setStatusTime(System.currentTimeMillis());
         return new ResponseEntity<>(item, HttpStatus.OK);
+    }
+
+    private class StartIndexingThread extends Thread {
+        @Override
+        public void run() {
+            clearDataService.clearTables();
+            log.info("Starting indexing");
+            Set<Thread> threads = new HashSet<>(0);
+            for (Site site : sites) {
+                String siteUrl = site.getUrl();
+                String siteTitle = site.getName();
+                Runnable task = () -> {
+                    runIndexing.runIndexing(siteUrl, siteTitle);
+                };
+                Thread thread1 = new Thread(task, siteUrl);
+                thread1.start();
+                threads.add(thread1);
+            }
+            threads.forEach(t -> {
+                try {
+                    t.join();
+                } catch (InterruptedException ignored) {
+                    log.error("Thread interrupted");
+                }
+            });
+            log.info("Threads: {} finished", threads.size());
+            runIndexing.setRunning(false);
+        }
     }
 }
