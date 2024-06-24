@@ -69,9 +69,10 @@ public class ApiController {
 
     @GetMapping("/startIndexing")
     public ResponseEntity<?> startIndexing(Model model) {
+        RunIndexing.setShutdown(false);
         DefaultAnswer defaultAnswer = new DefaultAnswer();
-        if (!runIndexing.getRunning()) {
-            runIndexing.setRunning(true);
+        if (!RunIndexing.isRunning()) {
+            RunIndexing.setRunning(true);
             Thread thread = new StartIndexingThread();
             thread.start();
             defaultAnswer.setResult(true);
@@ -85,11 +86,12 @@ public class ApiController {
     @GetMapping("/stopIndexing")
     public ResponseEntity<?> stopIndexing(Model model) {
         DefaultAnswer defaultAnswer = new DefaultAnswer();
-        if (runIndexing.getRunning()) {
+        if (RunIndexing.isRunning()) {
+            RunIndexing.setShutdown(true);
             Thread thread = new Thread(() -> {
                 runIndexing.stopIndexing();
                 runIndexing = new RunIndexing(connectionProvider, siteService, handlerService, pageService);
-                runIndexing.setRunning(false);
+                RunIndexing.setRunning(false);
             });
             thread.start();
             defaultAnswer.setResult(true);
@@ -102,11 +104,13 @@ public class ApiController {
 
     @PostMapping("/indexPage")
     public ResponseEntity<?> indexPage(URL url) {
+        RunIndexing.setShutdown(false);
         DefaultAnswer defaultAnswer = new DefaultAnswer();
 
         String root = url.getProtocol() + "://" + url.getHost();
         String path = url.getPath();
-        if (!runIndexing.getRunning()) {
+        if (!RunIndexing.isRunning()) {
+            RunIndexing.setRunning(true);
             if (siteService.getAll().stream().map(SiteDto::getUrl).anyMatch(root::equals) && handlerService.checkUrl(root + path, root)) {
                 Thread thread = new Thread(new Runnable() {
                     @Override
@@ -116,8 +120,10 @@ public class ApiController {
                 });
                 thread.start();
                 defaultAnswer.setResult(true);
+                RunIndexing.setRunning(false);
                 return new ResponseEntity<>(defaultAnswer, HttpStatus.OK);
             }
+            RunIndexing.setRunning(false);
         }
         defaultAnswer.setResult(false);
         defaultAnswer.setError("Данная страница находится за пределами сайтов,\n" +
@@ -138,40 +144,6 @@ public class ApiController {
 //        defaultAnswer.setError("Задан пустой поисковый запрос\"");
 //        return new ResponseEntity<>(defaultAnswer, HttpStatus.BAD_REQUEST);
         return searchService.search(query, site, offset, limit);
-    }
-
-    @GetMapping("/test")
-    public ResponseEntity<?> test(Model model) throws InterruptedException {
-//        Integer idd = pageService.findIdByPathAndSiteId("11", 1);
-//        log.info("id: {}", idd);
-//        PageDto pageDto = new PageDto();
-//        pageDto.setPath("11");
-//        pageDto.setSite_id(1);
-//        pageDto.setCode(200);
-//        pageDto.setRoot("");
-//        pageDto.setContent("");
-//        pageService.add(pageDto);
-//        int idd = pageService.findIdByPathAndSiteId("11", 1);
-//        System.out.printf(String.valueOf(idd));
-//        handlerService.test();
-
-//        siteDto.setId(1);
-//        siteDto.setStatus(Status.FAILED);
-//        siteService.update(siteDto);
-//        LemmaDto lemmaDto = new LemmaDto();
-//        lemmaDto.setLemma("слово");
-//        lemmaDto.setSite_id(1);
-//        lemmaDto.setFrequency(10);
-//        lemmaServiceImpl.add(lemmaDto);
-//        log.info(lemmaServiceImpl.findLemmaDtoByLemmaAndSiteId("слово", 1).getLemma());
-        DetailedStatisticsItem item = new DetailedStatisticsItem();
-        item.setName("111");
-        item.setUrl("22");
-        item.setPages(2323);
-        item.setLemmas(32342);
-        item.setStatus(Status.INDEXING);
-        item.setStatusTime(System.currentTimeMillis());
-        return new ResponseEntity<>(item, HttpStatus.OK);
     }
 
     private class StartIndexingThread extends Thread {
@@ -198,7 +170,7 @@ public class ApiController {
                 }
             });
             log.info("Threads: {} finished", threads.size());
-            runIndexing.setRunning(false);
+            RunIndexing.setRunning(false);
         }
     }
 }

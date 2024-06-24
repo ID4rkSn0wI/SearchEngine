@@ -7,6 +7,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import searchengine.components.RunIndexing;
 import searchengine.dto.indexing.IndexDto;
 import searchengine.dto.indexing.LemmaDto;
 import searchengine.dto.indexing.PageDto;
@@ -27,7 +28,7 @@ public class HandlerService {
     private ConnectionProvider connectionProvider;
 
     private static CopyOnWriteArraySet<String> uniquePaths = new CopyOnWriteArraySet<>();
-    private static String pattern = "([^\\s]+(\\.(?i)(jpg|png|gif|bmp|pdf))$)";
+    private static String pattern = "(.+(\\.(?i)(jpg|png|gif|bmp|pdf|jpeg|eps|xml|doc|xlx|xlsx))$)";
 
     private SiteServiceImpl siteService;
     private PageServiceImpl pageService;
@@ -45,6 +46,7 @@ public class HandlerService {
     }
 
     public void handlePage(PageDto pageDto) {
+        if (RunIndexing.isShutdown()) {return;}
         Document document = parsePage(pageDto);
 
         if (document == null) {
@@ -61,6 +63,7 @@ public class HandlerService {
         }
         pageDto.setSubPaths(subLinks);
 
+        if (RunIndexing.isShutdown()) {return;}
         parsePageLemmas(pageDto, document);
     }
 
@@ -134,14 +137,6 @@ public class HandlerService {
 
     public boolean checkUrl(String url, String rootUrl) {
         return url.startsWith(rootUrl) && !url.matches(pattern) && !url.contains("#");
-    }
-
-    public void test() {
-
-        LemmaDto lemma = lemmaService.findLemmaDtoByLemmaAndSiteId("слово", 1);
-        if (lemma.getLemma() == null) {
-            System.out.printf("null");
-        }
     }
 
     public void clearUniqueLinks() {

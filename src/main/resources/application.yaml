@@ -8,7 +8,7 @@ spring:
     url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true&characterEncoding=utf8
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
       naming:
         implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
@@ -17,7 +17,7 @@ spring:
 config:
   request-properties:
     referrer: http://www.google.com
-  time-between-requests: 500
+  time-between-requests: 0
   amount-of-words: 8
 
 indexing-settings:

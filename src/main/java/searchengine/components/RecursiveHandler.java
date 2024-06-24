@@ -28,9 +28,9 @@ public class RecursiveHandler extends RecursiveAction {
     @Override
     protected void compute() {
         List<RecursiveAction> actions = new ArrayList<>();
-        if (!ForkJoinTask.getPool().isShutdown()) {
-            handlerService.handlePage(pageDto);
-        }
+        if (RunIndexing.isShutdown()) {return;}
+        handlerService.handlePage(pageDto);
+        if (RunIndexing.isShutdown()) {return;}
         for (String path : pageDto.getSubPaths()) {
             PageDto pageDtoChild = new PageDto();
             pageDtoChild.setPath(path);
@@ -38,19 +38,10 @@ public class RecursiveHandler extends RecursiveAction {
             pageDtoChild.setSiteId(pageDto.getSiteId());
             pageDtoChild.setSubPaths(new HashSet<String>(0));
 
-            if (!ForkJoinTask.getPool().isShutdown()) {
-                RecursiveHandler action = new RecursiveHandler(pageDtoChild, handlerService);
+            RecursiveHandler action = new RecursiveHandler(pageDtoChild, handlerService);
 
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException ignored) {
-                    log.info("Interrupted");
-                    Thread.currentThread().interrupt();
-                }
-
-                action.fork();
-                actions.add(action);
-            }
+            action.fork();
+            actions.add(action);
         }
         actions.forEach(ForkJoinTask::join);
     }

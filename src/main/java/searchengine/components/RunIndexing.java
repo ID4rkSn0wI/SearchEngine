@@ -1,5 +1,6 @@
 package searchengine.components;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -24,7 +25,10 @@ public class RunIndexing {
     private final PageServiceImpl pageService;
     private ForkJoinPool forkJoinPool;
     private final HandlerService handlerService;
-    private volatile boolean isRunning = false;
+    @Getter
+    private volatile static boolean running = false;
+    @Getter
+    private volatile static boolean shutdown = false;
 
     @Autowired
     public RunIndexing(ConnectionProvider connectionProvider, SiteServiceImpl siteService, HandlerService handlerService, PageServiceImpl pageService) {
@@ -109,11 +113,11 @@ public class RunIndexing {
         handlerService.handleSinglePage(pageDto);
     }
 
-    public void setRunning(boolean running) {
-        isRunning = running;
+    public static void setRunning(boolean running) {
+        RunIndexing.running = running;
     }
 
-    public boolean getRunning() {
-        return isRunning;
+    public static void setShutdown(boolean shutdown) {
+        RunIndexing.shutdown = shutdown;
     }
 }

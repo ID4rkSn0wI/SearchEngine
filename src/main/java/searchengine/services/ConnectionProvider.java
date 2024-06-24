@@ -19,6 +19,8 @@ public class ConnectionProvider {
     private final PageServiceImpl pageService;
     @Value("${config.request-properties.referrer}")
     private String referrer;
+    @Value("${config.time-between-requests}")
+    private int timeBetweenRequests;
 
     @Autowired
     public ConnectionProvider(PageServiceImpl pageService) {
@@ -29,7 +31,7 @@ public class ConnectionProvider {
         Document document = null;
         String exception = null;
         try {
-            Thread.sleep(1000);
+            Thread.sleep(timeBetweenRequests);
             document = Jsoup.connect(path)
                     .userAgent(RandomUserAgent.getRandomUserAgent())
                     .maxBodySize(0)
