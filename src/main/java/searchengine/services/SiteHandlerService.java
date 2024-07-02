@@ -6,15 +6,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.stereotype.Service;
 import searchengine.components.RunIndexing;
 import searchengine.dto.indexing.IndexDto;
 import searchengine.dto.indexing.LemmaDto;
 import searchengine.dto.indexing.PageDto;
-import searchengine.services.implservices.IndexServiceImpl;
 import searchengine.services.implservices.LemmaServiceImpl;
-import searchengine.services.implservices.PageServiceImpl;
-import searchengine.services.implservices.SiteServiceImpl;
 
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -23,26 +21,22 @@ import java.util.concurrent.CopyOnWriteArraySet;
 @Getter
 @Service
 @Slf4j
-public class HandlerService {
-    private final IndexServiceImpl indexService;
+public class SiteHandlerService {
     private ConnectionProvider connectionProvider;
-
     private static CopyOnWriteArraySet<String> uniquePaths = new CopyOnWriteArraySet<>();
+    private static CopyOnWriteArraySet<LemmaDto> lemmasToSave = new CopyOnWriteArraySet<>();
+    private static CopyOnWriteArraySet<IndexDto> indexesToSave = new CopyOnWriteArraySet<>();
     private static String pattern = "(.+(\\.(?i)(jpg|png|gif|bmp|pdf|jpeg|eps|xml|doc|xlx|xlsx))$)";
-
-    private SiteServiceImpl siteService;
-    private PageServiceImpl pageService;
     private LuceneMorphologyService luceneMorphologyService;
     private LemmaServiceImpl lemmaService;
+    private TableServices tableServices;
 
     @Autowired
-    public HandlerService(ConnectionProvider connectionProvider, SiteServiceImpl siteService, PageServiceImpl pageService, LuceneMorphologyService luceneMorphologyService, LemmaServiceImpl lemmaService, IndexServiceImpl indexService) {
+    public SiteHandlerService(ConnectionProvider connectionProvider, LuceneMorphologyService luceneMorphologyService, LemmaServiceImpl lemmaService, TableServices tableServices) {
         this.connectionProvider = connectionProvider;
-        this.siteService = siteService;
-        this.pageService = pageService;
         this.luceneMorphologyService = luceneMorphologyService;
         this.lemmaService = lemmaService;
-        this.indexService = indexService;
+        this.tableServices = tableServices;
     }
 
     public void handlePage(PageDto pageDto) {
@@ -69,15 +63,13 @@ public class HandlerService {
 
     public void handleSinglePage(PageDto pageDto) {
         if (pageDto.getId() != null) {
-            pageService.delete(pageDto.getId());
-            List<Integer> lemma_ids = indexService.getLemmaIdsByPageId(pageDto.getId());
-            indexService.deleteAllByPageId(pageDto.getId());
+            tableServices.getPageService().delete(pageDto.getId());
+            List<Integer> lemma_ids = tableServices.getIndexService().getLemmaIdsByPageId(pageDto.getId());
+            tableServices.getIndexService().deleteAllByPageId(pageDto.getId());
             lemmaService.deleteAllByIds(lemma_ids);
         }
         Document document = parsePage(pageDto);
-        if (document == null) {
-            return;
-        }
+        if (document == null) {return;}
         parsePageLemmas(pageDto, document);
     }
 
@@ -89,7 +81,7 @@ public class HandlerService {
         }
         pageDto.setCode(200);
         pageDto.setContent(document.html());
-        pageService.add(pageDto);
+        pageDto.setId(tableServices.getPageService().addAndReturnId(pageDto));
         return document;
     }
 
@@ -104,25 +96,33 @@ public class HandlerService {
     }
 
     public void saveLemma(Map<String, Float> lemmas, PageDto pageDto) {
-
         for (Map.Entry word : lemmas.entrySet()) {
-            LemmaDto lemmaDto = lemmaService.findLemmaDtoByLemmaAndSiteId(word.getKey().toString(),
-                    pageDto.getSiteId());
-            if (lemmaDto.getLemma() == null) {
-                lemmaDto = new LemmaDto();
-                lemmaDto.setSiteId(pageDto.getSiteId());
-                lemmaDto.setLemma(word.getKey().toString());
-                lemmaDto.setFrequency(1);
-            } else {
-                lemmaDto.setFrequency(lemmaDto.getFrequency() + 1);
-            }
-            lemmaService.add(lemmaDto);
+            try {
+//                LemmaDto lemmaDto = lemmaService.findLemmaDtoByLemmaAndSiteId(word.getKey().toString(),
+//                        pageDto.getSiteId());
+                LemmaDto lemmaDto = lemmasToSave.stream().filter(l -> l.getLemma().equals(word.getKey()) && l.getSiteId() == pageDto.getSiteId()).findFirst().orElse(new LemmaDto());
+                if (lemmaDto.getLemma() == null) {
+                    lemmaDto = new LemmaDto();
+                    lemmaDto.setSiteId(pageDto.getSiteId());
+                    lemmaDto.setLemma(word.getKey().toString());
+                    lemmaDto.setFrequency(1);
+                } else {
+                    lemmaDto.setFrequency(lemmaDto.getFrequency() + 1);
+                }
+                lemmasToSave.add(lemmaDto);
+                lemmaDto.setId(lemmasToSave.size());
+//                lemmaDto.setId(lemmaService.addAndReturnId(lemmaDto));
 
-            IndexDto indexDto = new IndexDto();
-            indexDto.setPageId(pageService.findIdByPathAndSiteId(pageDto.getPath(), pageDto.getSiteId()));
-            indexDto.setLemmaId(lemmaService.getIdByLemmaAndSiteId(lemmaDto.getLemma(), lemmaDto.getSiteId()));
-            indexDto.setRank((float) word.getValue());
-            indexService.add(indexDto);
+                IndexDto indexDto = new IndexDto();
+                indexDto.setPageId(pageDto.getId());
+                indexDto.setLemmaId(lemmaDto.getId());
+                indexDto.setRank((float) word.getValue());
+                indexesToSave.add(indexDto);
+//                tableServices.getIndexService().add(indexDto);
+            } catch (IncorrectResultSizeDataAccessException e) {
+                log.info(word.getKey().toString());
+            }
+
         }
     }
 
@@ -141,5 +141,9 @@ public class HandlerService {
 
     public void clearUniqueLinks() {
         uniquePaths.clear();
+    }
+
+    public void saveAllLemmasAndIndexes() {
+
     }
 }

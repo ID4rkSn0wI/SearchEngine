@@ -39,6 +39,13 @@ public class PageServiceImpl implements PageService<PageDto> {
     }
 
     @Override
+    public Integer addAndReturnId(PageDto pageDto) {
+        Page page = mapToEntity(pageDto);
+        pageRepo.save(page);
+        return page.getId();
+    }
+
+    @Override
     public void update(PageDto pageDto) {
         log.info("Updating page: {}", pageDto);
         pageRepo.save(mapToEntity(pageDto));
@@ -48,12 +55,6 @@ public class PageServiceImpl implements PageService<PageDto> {
     public void delete(Integer id) {
         log.info("Deleting page: {}", id);
         pageRepo.deleteById(id);
-    }
-
-    @Override
-    public void deleteAll() {
-        log.info("Deleting all pages");
-        pageRepo.deleteAll();
     }
 
     @Override
@@ -72,6 +73,11 @@ public class PageServiceImpl implements PageService<PageDto> {
     @Override
     public Integer countBySiteId(int siteId) {
         return pageRepo.countBySiteId(siteId);
+    }
+
+    @Override
+    public void truncate() {
+        pageRepo.truncate();
     }
 
     private static PageDto mapToDto(Page page) {

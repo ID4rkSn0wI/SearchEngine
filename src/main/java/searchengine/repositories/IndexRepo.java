@@ -23,4 +23,9 @@ public interface IndexRepo extends JpaRepository<Index, Integer> {
 
     @Query(value = "SELECT lemma_rank FROM search_index WHERE lemma_id=:lemmaId and page_id=:pageId", nativeQuery = true)
     Float findRankByLemmaIdAndPageId(Integer lemmaId, Integer pageId);
+
+    @Modifying
+    @Transactional
+    @Query(value = "TRUNCATE TABLE search_index", nativeQuery = true)
+    void truncate();
 }

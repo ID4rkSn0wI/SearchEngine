@@ -52,15 +52,14 @@ public class SiteServiceImpl implements SiteService<SiteDto> {
     }
 
     @Override
-    public void deleteAll() {
-        log.info("Deleting all sites");
-        siteRepo.deleteAll();
-    }
-
-    @Override
     public SiteDto findSiteByUrl(String path) {
         log.info("Finding site by url: {}", path);
         return siteRepo.findByUrl(path) == null ? null : mapToDto(siteRepo.findByUrl(path));
+    }
+
+    @Override
+    public void truncate() {
+        siteRepo.truncate();
     }
 
     private static SiteDto mapToDto(Site site) {

@@ -27,7 +27,7 @@ public class ConnectionProvider {
         this.pageService = pageService;
     }
 
-    public synchronized String getDoc(String path) {
+    public String getDoc(String path) {
         Document document = null;
         String exception = null;
         try {
@@ -51,7 +51,7 @@ public class ConnectionProvider {
         return exception;
     }
 
-    public synchronized Document getDoc(PageDto pageDto) {
+    public Document getDoc(PageDto pageDto) {
         Document document = null;
         try {
             Thread.sleep(1000);

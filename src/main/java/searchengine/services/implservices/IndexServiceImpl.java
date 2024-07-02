@@ -18,11 +18,6 @@ public class IndexServiceImpl implements searchengine.services.indexing_services
     private final IndexRepo indexRepo;
 
     @Override
-    public IndexDto getById(int id) {
-        return mapToDto(indexRepo.getReferenceById(id));
-    }
-
-    @Override
     public Collection<IndexDto> getAll() {
         return indexRepo.findAll()
                 .stream()
@@ -31,13 +26,13 @@ public class IndexServiceImpl implements searchengine.services.indexing_services
     }
 
     @Override
-    public void add(IndexDto lemmaDto) {
-        indexRepo.save(mapToEntity(lemmaDto));
+    public void add(IndexDto indexDto) {
+        indexRepo.save(mapToEntity(indexDto));
     }
 
     @Override
-    public void update(IndexDto lemmaDto) {
-        indexRepo.save(mapToEntity(lemmaDto));
+    public void update(IndexDto indexDto) {
+        indexRepo.save(mapToEntity(indexDto));
     }
 
     @Override
@@ -63,6 +58,11 @@ public class IndexServiceImpl implements searchengine.services.indexing_services
     @Override
     public Float findRankByLemmaIdAndPageId(Integer lemmaId, Integer pageId) {
         return indexRepo.findRankByLemmaIdAndPageId(lemmaId, pageId);
+    }
+
+    @Override
+    public void truncate() {
+        indexRepo.truncate();
     }
 
     private static IndexDto mapToDto(Index index) {

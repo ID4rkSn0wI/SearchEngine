@@ -1,10 +1,9 @@
-package searchengine.components;
+package searchengine.utils;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import searchengine.components.RunIndexing;
 import searchengine.dto.indexing.PageDto;
-import searchengine.services.HandlerService;
+import searchengine.services.SiteHandlerService;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -13,23 +12,20 @@ import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
 
 @Slf4j
-@Component
 public class RecursiveHandler extends RecursiveAction {
+    private final SiteHandlerService siteHandlerService;
     private final PageDto pageDto;
-    private final HandlerService handlerService;
 
-
-    @Autowired
-    public RecursiveHandler(PageDto pageDto, HandlerService handlerService) {
+    public RecursiveHandler(PageDto pageDto, SiteHandlerService siteHandlerService) {
+        this.siteHandlerService = siteHandlerService;
         this.pageDto = pageDto;
-        this.handlerService = handlerService;
     }
 
     @Override
     protected void compute() {
         List<RecursiveAction> actions = new ArrayList<>();
         if (RunIndexing.isShutdown()) {return;}
-        handlerService.handlePage(pageDto);
+        siteHandlerService.handlePage(pageDto);
         if (RunIndexing.isShutdown()) {return;}
         for (String path : pageDto.getSubPaths()) {
             PageDto pageDtoChild = new PageDto();
@@ -38,7 +34,7 @@ public class RecursiveHandler extends RecursiveAction {
             pageDtoChild.setSiteId(pageDto.getSiteId());
             pageDtoChild.setSubPaths(new HashSet<String>(0));
 
-            RecursiveHandler action = new RecursiveHandler(pageDtoChild, handlerService);
+            RecursiveHandler action = new RecursiveHandler(pageDtoChild, siteHandlerService);
 
             action.fork();
             actions.add(action);

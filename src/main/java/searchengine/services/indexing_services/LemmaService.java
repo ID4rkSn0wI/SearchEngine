@@ -4,14 +4,14 @@ import java.util.Collection;
 import java.util.List;
 
 public interface LemmaService<T> {
-    T getById(int id);
     Collection<T> getAll();
-    void add(T site);
-    void update(T site);
+    void add(T lemma);
+    Integer addAndReturnId(T lemma);
+    void update(T lemma);
     void delete(Integer id);
     T findLemmaDtoByLemmaAndSiteId(String lemma, int siteId);
     Integer countBySiteId(int site_id);
-    Integer getIdByLemmaAndSiteId(String lemma, int siteId);
     void deleteAllByIds(Collection<Integer> lemmaIds);
     List<T> findLemmasDtoByLemma(String lemma);
+    void truncate();
 }

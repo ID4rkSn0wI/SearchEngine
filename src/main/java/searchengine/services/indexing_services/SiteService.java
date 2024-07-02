@@ -8,7 +8,6 @@ public interface SiteService<T> {
     void add(T site);
     void update(T site);
     void delete(Integer id);
-    void deleteAll();
     T findSiteByUrl(String url);
-//    Integer findIdByUrl(String url);
+    void truncate();
 }

@@ -20,11 +20,6 @@ public class LemmaServiceImpl implements LemmaService<LemmaDto> {
     private final LemmaRepo lemmaRepo;
 
     @Override
-    public LemmaDto getById(int id) {
-        return mapToDto(lemmaRepo.getReferenceById(id));
-    }
-
-    @Override
     public Collection<LemmaDto> getAll() {
         return lemmaRepo.findAll()
                 .stream()
@@ -35,6 +30,13 @@ public class LemmaServiceImpl implements LemmaService<LemmaDto> {
     @Override
     public void add(LemmaDto lemmaDto) {
         lemmaRepo.save(mapToEntity(lemmaDto));
+    }
+
+    @Override
+    public Integer addAndReturnId(LemmaDto lemmaDto) {
+        Lemma lemma = mapToEntity(lemmaDto);
+        lemmaRepo.save(lemma);
+        return lemma.getId();
     }
 
     @Override
@@ -62,11 +64,6 @@ public class LemmaServiceImpl implements LemmaService<LemmaDto> {
     }
 
     @Override
-    public Integer getIdByLemmaAndSiteId(String lemma, int siteId) {
-        return lemmaRepo.getIdByLemmaAndSiteId(lemma, siteId);
-    }
-
-    @Override
     public void deleteAllByIds(Collection<Integer> lemmaIds) {
         lemmaRepo.deleteAllByIds(lemmaIds);
     }
@@ -78,6 +75,11 @@ public class LemmaServiceImpl implements LemmaService<LemmaDto> {
             return new ArrayList<>();
         }
         return lemmas.stream().map(LemmaServiceImpl::mapToDto).toList();
+    }
+
+    @Override
+    public void truncate() {
+        lemmaRepo.truncate();
     }
 
     public static LemmaDto mapToDto(Lemma lemma) {

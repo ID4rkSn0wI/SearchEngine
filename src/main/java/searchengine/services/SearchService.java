@@ -6,16 +6,14 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import searchengine.dto.indexing.LemmaDto;
 import searchengine.dto.indexing.PageDto;
 import searchengine.dto.indexing.SiteDto;
 import searchengine.dto.search.SearchData;
 import searchengine.dto.search.SearchResponse;
-import searchengine.services.implservices.IndexServiceImpl;
-import searchengine.services.implservices.LemmaServiceImpl;
-import searchengine.services.implservices.PageServiceImpl;
-import searchengine.services.implservices.SiteServiceImpl;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -23,48 +21,41 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class SearchService {
-    private LuceneMorphologyService luceneMorphologyService;
-    private LemmaServiceImpl lemmasService;
-    private SiteServiceImpl siteService;
-    private PageServiceImpl pageService;
-    private IndexServiceImpl indexService;
-    private ConnectionProvider connectionProvider;
+    private final LuceneMorphologyService luceneMorphologyService;
+    private final TableServices tableServices;
     @Value("${config.amount-of-words}")
     private int amountOfWords;
 
     @Autowired
-    public SearchService(IndexServiceImpl indexService, PageServiceImpl pageService, SiteServiceImpl siteService, LemmaServiceImpl lemmasService, LuceneMorphologyService luceneMorphologyService, ConnectionProvider connectionProvider) {
-        this.indexService = indexService;
-        this.pageService = pageService;
-        this.siteService = siteService;
-        this.lemmasService = lemmasService;
+    public SearchService(LuceneMorphologyService luceneMorphologyService, TableServices tableServices) {
         this.luceneMorphologyService = luceneMorphologyService;
-        this.connectionProvider = connectionProvider;
+        this.tableServices = tableServices;
     }
 
-    public SearchResponse search(String query, String siteUrl, int offset, int limit) {
+    public ResponseEntity<?> search(String query, String siteUrl, int offset, int limit) {
+        SearchResponse searchResponse = new SearchResponse();
         Integer siteId;
         SiteDto siteDto = null;
         if  (siteUrl != null) {
-            siteDto = siteService.findSiteByUrl(siteUrl);
+            siteDto = tableServices.getSiteService().findSiteByUrl(siteUrl);
             if (siteDto == null) {
-                throw new IllegalArgumentException("Invalid site url: " + siteUrl);
+                searchResponse.setResult(false);
+                searchResponse.setError("Invalid site url for: " + siteUrl);
+                return new ResponseEntity<>(searchResponse, HttpStatus.BAD_REQUEST);
             }
             siteId = siteDto.getId();
         } else {
             siteId = null;
         }
-
-        SearchResponse searchResponse = new SearchResponse();
-        float maxFrequency = pageService.getAll().size() * 0.3f;
+        float maxFrequency = tableServices.getPageService().getAll().size() * 0.3f;
         Set<String> wordsInQuery = luceneMorphologyService.getLemmaSet(query);
         Set<LemmaDto> sortedSetLemmas = new HashSet<>(0);
         for (String word : wordsInQuery) {
             if (siteId != null) {
-                LemmaDto lemmaDto = lemmasService.findLemmaDtoByLemmaAndSiteId(word, siteId);
+                LemmaDto lemmaDto = tableServices.getLemmaService().findLemmaDtoByLemmaAndSiteId(word, siteId);
                 sortedSetLemmas.add(lemmaDto);
             } else {
-                List<LemmaDto> lemmaDtoList = lemmasService.findLemmasDtoByLemma(word);
+                List<LemmaDto> lemmaDtoList = tableServices.getLemmaService().findLemmasDtoByLemma(word);
                 sortedSetLemmas.addAll(lemmaDtoList);
             }
         }
@@ -77,10 +68,9 @@ public class SearchService {
         if (filteredPageIds.isEmpty()) {
             searchResponse.setCount(0);
             searchResponse.setResult(false);
-            searchResponse.setData(new ArrayList<SearchData>());
-            return searchResponse;
+            searchResponse.setData(new ArrayList<>());
+            return new ResponseEntity<>(searchResponse, HttpStatus.NOT_FOUND);
         }
-
         Map<Integer, Float> pagesRelevance = getPagesRelevance(filteredPageIds, sortedSetLemmas);
         List<SearchData> searchDataList = getSearchData(pagesRelevance, siteDto, sortedSetLemmas, offset, limit)
                 .stream()
@@ -88,7 +78,7 @@ public class SearchService {
         searchResponse.setResult(true);
         searchResponse.setCount(pagesRelevance.size());
         searchResponse.setData(List.of(searchDataList.toArray(new SearchData[0])));
-        return searchResponse;
+        return new ResponseEntity<>(searchResponse, HttpStatus.OK);
     }
 
     private List<SearchData> getSearchData(Map<Integer, Float> relevanceAbsolutPages,
@@ -103,7 +93,7 @@ public class SearchService {
             if (count > offset + limit - 1){
                 break;
             }
-            PageDto pageDto = pageService.getById((int) element.getKey());
+            PageDto pageDto = tableServices.getPageService().getById((int) element.getKey());
             if (pageDto.getPath() == null) {
                 continue;
             }
@@ -111,10 +101,8 @@ public class SearchService {
             Document document = Jsoup.parse(content);
             String title = document.title();
             String body = document.body().text();
-
             String snippet = getSnippet(body, sortedSetLemmas);
-
-            SiteDto siteResult = siteDto != null? siteDto : siteService.getById(pageDto.getSiteId());
+            SiteDto siteResult = siteDto != null? siteDto : tableServices.getSiteService().getById(pageDto.getSiteId());
             SearchData dataResponse = new SearchData();
             dataResponse.setSite(siteResult.getUrl());
             dataResponse.setSiteName(siteResult.getName());
@@ -128,35 +116,29 @@ public class SearchService {
     }
 
     public String getSnippet(String text, Set<LemmaDto> lemmaInQuery) {
-        if (lemmaInQuery.isEmpty()){
-            return null;
-        }
+        if (lemmaInQuery.isEmpty()){return null;}
         List<String> words = List.of(text.toLowerCase().replaceAll("[^а-яёa-z]", " ").trim().split("\\s+"));
         List<String> defaultWords = List.of(text.replaceAll("[^а-яёА-ЯA-Za-zЁ]", " ").trim().split("\\s+"));
         Boolean[] foundIndexes = new Boolean[words.size()];
-        for (int i = 0; i < words.size(); i++) {
-            foundIndexes[i] = false;
-        }
+        for (int i = 0; i < words.size(); i++) {foundIndexes[i] = false;}
         int[] startIndexes = new int[words.size()];
         int maxCount = 0;
         int start = 0;
         int lastIndex = -1;
         int sameStart = 0;
-
         for (int i = 0; i < words.size(); i++) {
             for (String wordLemma : luceneMorphologyService.getLemmaSet(words.get(i))) {
                 for (String lemma : lemmaInQuery.stream().map(LemmaDto::getLemma).toList()) {
                     if (wordLemma.equals(lemma)) {
                         foundIndexes[i] = true;
-                        text = text.replaceAll("<b>" + defaultWords.get(i) + "</b>", defaultWords.get(i));
-                        text = text.replaceAll(defaultWords.get(i), "<b>" + defaultWords.get(i) + "</b>");
+                        if (!text.contains("<b>" + defaultWords.get(i) + "</b>")) {
+                            text = text.replaceAll(defaultWords.get(i), "<b>" + defaultWords.get(i) + "</b>");
+                        }
                     }
                 }
             }
             int index = StringUtils.indexOf(text, defaultWords.get(i), lastIndex);
-            if (index == -1) {
-                index = StringUtils.indexOf(text, "<b>" + defaultWords.get(i) + "</b>", lastIndex);
-            }
+            if (index == -1) {index = StringUtils.indexOf(text, "<b>" + defaultWords.get(i) + "</b>", lastIndex);}
             lastIndex = index;
             startIndexes[i] = index;
         }
@@ -166,9 +148,8 @@ public class SearchService {
                 maxCount = count;
                 start = i;
                 sameStart = i;
-            } else if (count == maxCount) {
-                sameStart = i;
-            } else {
+            } else if (count == maxCount) {sameStart = i;}
+            else {
                 if ((sameStart - start) <= amountOfWords - 1 && sameStart > start) {
                     int division = (start + sameStart) / 2;
                     start = division;
@@ -176,10 +157,7 @@ public class SearchService {
                 }
             }
         }
-        if ((sameStart - start) <= amountOfWords - 1 && sameStart > start) {
-            start = sameStart;
-        }
-
+        if ((sameStart - start) <= amountOfWords - 1 && sameStart > start) {start = sameStart;}
         return text.substring(startIndexes[start], startIndexes[start + amountOfWords - 1] + words.get(start + amountOfWords - 1).length() + (foundIndexes[start + amountOfWords - 1] ? 7 : 0));
     }
 
@@ -189,14 +167,14 @@ public class SearchService {
         for (Integer pageId : filteredPageIds) {
             float pageRank = 0f;
             for (LemmaDto lemmaDto : sortedLemmas) {
-                pageRank += indexService.findRankByLemmaIdAndPageId(lemmaDto.getId(), pageId);
+                pageRank += tableServices.getIndexService().findRankByLemmaIdAndPageId(lemmaDto.getId(), pageId);
             }
             pagesRelevance.put(pageId, pageRank);
             maxRelevance = Math.max(maxRelevance, pageRank);
         }
         final float finalMaxRelevance = maxRelevance;
         return pagesRelevance.entrySet().stream()
-                .sorted(Map.Entry.comparingByValue((v1, v2) -> v2.compareTo(v1)))
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                 .collect(Collectors.toMap(Map.Entry::getKey, v -> v.getValue() / finalMaxRelevance, (v1, v2) -> v1, LinkedHashMap::new));
     }
 
@@ -205,7 +183,7 @@ public class SearchService {
         int count = 0;
         for (LemmaDto lemmaDto : sortedLemmas) {
             count++;
-            Set<Integer> pagesForLemma = indexService.findPageIdsByLemmaId(lemmaDto.getId());
+            Set<Integer> pagesForLemma = tableServices.getIndexService().findPageIdsByLemmaId(lemmaDto.getId());
             if (count == 1) {
                 filteredPageIds.addAll(pagesForLemma);
                 continue;

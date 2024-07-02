@@ -16,9 +16,6 @@ public interface LemmaRepo extends JpaRepository<Lemma, Integer> {
     @Query(value = "SELECT COUNT(*) FROM Lemma WHERE Lemma.site_id=:siteId", nativeQuery = true)
     Integer countBySiteId(int siteId);
 
-    @Query(value = "SELECT id FROM Lemma WHERE Lemma.lemma=:lemma and Lemma.site_id=:siteId", nativeQuery = true)
-    Integer getIdByLemmaAndSiteId(String lemma, int siteId);
-
     @Transactional
     @Modifying
     @Query(value = "DELETE FROM Lemma WHERE Lemma.id IN :lemmaIds", nativeQuery = true)
@@ -26,4 +23,9 @@ public interface LemmaRepo extends JpaRepository<Lemma, Integer> {
 
     @Query("SELECT l FROM Lemma as l WHERE l.lemma=:lemma")
     List<Lemma> findLemmasDtoByLemma(String lemma);
+
+    @Modifying
+    @Transactional
+    @Query(value = "TRUNCATE TABLE Lemma", nativeQuery = true)
+    void truncate();
 }

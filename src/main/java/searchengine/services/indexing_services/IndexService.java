@@ -5,13 +5,13 @@ import java.util.List;
 import java.util.Set;
 
 public interface IndexService<T> {
-    T getById(int id);
     Collection<T> getAll();
-    void add(T site);
-    void update(T site);
+    void add(T index);
+    void update(T index);
     void delete(Integer id);
     void deleteAllByPageId(int pageId);
     List<Integer> getLemmaIdsByPageId(Integer pageId);
     Set<Integer> findPageIdsByLemmaId(int lemmaId);
     Float findRankByLemmaIdAndPageId(Integer lemmaId, Integer pageId);
+    void truncate();
 }
