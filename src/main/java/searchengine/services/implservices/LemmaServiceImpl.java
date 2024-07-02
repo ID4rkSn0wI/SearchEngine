@@ -28,15 +28,20 @@ public class LemmaServiceImpl implements LemmaService<LemmaDto> {
     }
 
     @Override
-    public void add(LemmaDto lemmaDto) {
+    public void save(LemmaDto lemmaDto) {
         lemmaRepo.save(mapToEntity(lemmaDto));
     }
 
     @Override
-    public Integer addAndReturnId(LemmaDto lemmaDto) {
+    public Integer saveAndReturnId(LemmaDto lemmaDto) {
         Lemma lemma = mapToEntity(lemmaDto);
         lemmaRepo.save(lemma);
         return lemma.getId();
+    }
+
+    @Override
+    public void saveAll(Collection<LemmaDto> lemmas) {
+        lemmaRepo.saveAll(lemmas.stream().map(LemmaServiceImpl::mapToEntity).toList());
     }
 
     @Override

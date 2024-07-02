@@ -24,17 +24,15 @@ public class ApiController {
     private final ConnectionProvider connectionProvider;
     private final SearchService searchService;
     private RunIndexing runIndexing;
-    private final SiteHandlerService siteHandlerService;
     private final Config config;
     private final TableServices tableServices;
 
     @Autowired
-    public ApiController(StatisticsServiceImpl statisticsService, ConnectionProvider connectionProvider, RunIndexing runIndexing, SiteHandlerService siteHandlerService, SearchService searchService, Config config, TableServices tableServices) {
+    public ApiController(StatisticsServiceImpl statisticsService, ConnectionProvider connectionProvider, RunIndexing runIndexing, SearchService searchService, Config config, TableServices tableServices) {
         this.statisticsService = statisticsService;
         this.connectionProvider = connectionProvider;
         this.config = config;
         this.runIndexing = runIndexing;
-        this.siteHandlerService = siteHandlerService;
         this.searchService = searchService;
         this.tableServices = tableServices;
     }
@@ -65,12 +63,12 @@ public class ApiController {
         if (RunIndexing.isRunning()) {
             RunIndexing.setShutdown(true);
             runIndexing.stopIndexing();
-            runIndexing = new RunIndexing(connectionProvider, tableServices, siteHandlerService, config);
+            runIndexing.refreshThreads();
             defaultAnswer.setResult(true);
             return new ResponseEntity<>(defaultAnswer, HttpStatus.OK);
         }
         defaultAnswer.setResult(false);
-        defaultAnswer.setError("Индексация не запущена\"");
+        defaultAnswer.setError("Индексация не запущена");
         return new ResponseEntity<>(defaultAnswer, HttpStatus.BAD_REQUEST);
     }
 
@@ -82,7 +80,7 @@ public class ApiController {
         String root = url.getProtocol() + "://" + url.getHost();
         String path = url.getPath();
         if (!RunIndexing.isRunning()) {
-            if (siteHandlerService.checkUrl(root + path, root)) {
+            if (SiteHandlerService.checkUrl(root + path, root)) {
                 if (tableServices.getSiteService().getAll().stream().map(SiteDto::getUrl).anyMatch(root::equals)) {
                     RunIndexing.setRunning(true);
                     runIndexing.startIndexingPage(root, path);

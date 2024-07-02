@@ -22,23 +22,22 @@ import java.util.concurrent.*;
 public class RunIndexing {
     private final ConnectionProvider connectionProvider;
     private final TableServices tableServices;
-    private final ForkJoinPool forkJoinPool;
-    private final SiteHandlerService siteHandlerService;
+    private ForkJoinPool forkJoinPool;
     @Getter
     private volatile static boolean running = false;
     @Getter
     private volatile static boolean shutdown = false;
     private final Config config;
-    private final ThreadPoolExecutor executor;
+    private ThreadPoolExecutor executor;
+    private final LuceneMorphologyService luceneMorphologyService;
 
     @Autowired
-    public RunIndexing(ConnectionProvider connectionProvider, TableServices tableServices, SiteHandlerService siteHandlerService, Config config) {
+    public RunIndexing(ConnectionProvider connectionProvider, TableServices tableServices, Config config, LuceneMorphologyService luceneMorphologyService) {
         this.connectionProvider = connectionProvider;
         this.tableServices = tableServices;
-        this.siteHandlerService = siteHandlerService;
         this.config = config;
-        forkJoinPool = ForkJoinUtil.forkJoinPool;
-        executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(config.getSites().size());
+        this.luceneMorphologyService = luceneMorphologyService;
+        this.refreshThreads();
     }
 
     public void startIndexing() {
@@ -66,10 +65,10 @@ public class RunIndexing {
         if (siteAnswer != null) {
             siteDto.setLastError(siteAnswer);
             siteDto.setStatus(Status.FAILED);
-            tableServices.getSiteService().add(siteDto);
+            tableServices.getSiteService().save(siteDto);
             return;
         }
-        tableServices.getSiteService().add(siteDto);
+        tableServices.getSiteService().save(siteDto);
 
         PageDto pageDto = new PageDto();
         log.info("Path: {}", path);
@@ -79,10 +78,11 @@ public class RunIndexing {
         pageDto.setSubPaths(new HashSet<String>(0));
 
         long startTime = System.currentTimeMillis();
-
+        SiteHandlerService siteHandlerService = new SiteHandlerService(connectionProvider, luceneMorphologyService, tableServices);
         RecursiveHandler recursiveHandler = new RecursiveHandler(pageDto, siteHandlerService);
         forkJoinPool.invoke(recursiveHandler);
 
+        siteHandlerService.saveAllLemmasAndIndexes();
         siteDto.setId(tableServices.getSiteService().findSiteByUrl(path).getId());
         siteDto.setStatusTime(LocalDateTime.now());
         siteDto.setStatus(Status.INDEXED);
@@ -106,10 +106,22 @@ public class RunIndexing {
     }
 
     public void stopIndexing() {
-        executor.shutdown();
-        forkJoinPool.shutdownNow();
-        ForkJoinUtil.refreshForkJoinPool();
-        siteHandlerService.clearUniqueLinks();
+        Executor executor = Executors.newSingleThreadExecutor();
+        executor.execute(this::stopIndexingNow);
+    }
+
+    private void stopIndexingNow() {
+        try {
+            if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+            }
+            forkJoinPool.shutdownNow();
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
+        } finally {
+            RunIndexing.setRunning(false);
+            RunIndexing.setShutdown(false);
+        }
     }
 
     public void runIndexingPage(String root, String path) {
@@ -123,7 +135,7 @@ public class RunIndexing {
             log.info("Found id: {}", id);
             pageDto.setId(id);
         }
-        siteHandlerService.handleSinglePage(pageDto);
+        new SiteHandlerService(connectionProvider, luceneMorphologyService, tableServices).handleSinglePage(pageDto);
         RunIndexing.setRunning(false);
     }
 
@@ -133,5 +145,10 @@ public class RunIndexing {
 
     public static void setShutdown(boolean shutdown) {
         RunIndexing.shutdown = shutdown;
+    }
+
+    public void refreshThreads() {
+        forkJoinPool = ForkJoinUtil.forkJoinPool;
+        executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(config.getSites().size());
     }
 }

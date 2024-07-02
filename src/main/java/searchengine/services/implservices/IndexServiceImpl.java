@@ -26,8 +26,13 @@ public class IndexServiceImpl implements searchengine.services.indexing_services
     }
 
     @Override
-    public void add(IndexDto indexDto) {
+    public void save(IndexDto indexDto) {
         indexRepo.save(mapToEntity(indexDto));
+    }
+
+    @Override
+    public void saveAll(Collection<IndexDto> indexes) {
+        indexRepo.saveAll(indexes.stream().map(IndexServiceImpl::mapToEntity).toList());
     }
 
     @Override

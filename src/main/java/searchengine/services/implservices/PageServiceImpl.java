@@ -34,12 +34,12 @@ public class PageServiceImpl implements PageService<PageDto> {
     }
 
     @Override
-    public void add(PageDto pageDto) {
+    public void save(PageDto pageDto) {
         pageRepo.save(mapToEntity(pageDto));
     }
 
     @Override
-    public Integer addAndReturnId(PageDto pageDto) {
+    public Integer saveAndReturnId(PageDto pageDto) {
         Page page = mapToEntity(pageDto);
         pageRepo.save(page);
         return page.getId();

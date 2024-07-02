@@ -34,7 +34,7 @@ public class SiteServiceImpl implements SiteService<SiteDto> {
     }
 
     @Override
-    public void add(SiteDto site) {
+    public void save(SiteDto site) {
         log.info("Adding site: {}", site.getUrl());
         siteRepo.save(mapToEntity(site));
     }
