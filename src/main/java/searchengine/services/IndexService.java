@@ -1,4 +1,4 @@
-package searchengine.services.indexing_services;
+package searchengine.services;
 
 import java.util.Collection;
 import java.util.List;
@@ -6,8 +6,7 @@ import java.util.Set;
 
 public interface IndexService<T> {
     Collection<T> getAll();
-    void save(T index);
-    void saveAll(Collection<T> indexes);
+    void addAll(Collection<T> indexes);
     void update(T index);
     void delete(Integer id);
     void deleteAllByPageId(int pageId);

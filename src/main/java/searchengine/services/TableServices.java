@@ -4,10 +4,6 @@ package searchengine.services;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import searchengine.services.implservices.IndexServiceImpl;
-import searchengine.services.implservices.LemmaServiceImpl;
-import searchengine.services.implservices.PageServiceImpl;
-import searchengine.services.implservices.SiteServiceImpl;
 
 @Getter
 @Service

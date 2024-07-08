@@ -65,10 +65,10 @@ public class RunIndexing {
         if (siteAnswer != null) {
             siteDto.setLastError(siteAnswer);
             siteDto.setStatus(Status.FAILED);
-            tableServices.getSiteService().save(siteDto);
+            tableServices.getSiteService().add(siteDto);
             return;
         }
-        tableServices.getSiteService().save(siteDto);
+        tableServices.getSiteService().add(siteDto);
 
         PageDto pageDto = new PageDto();
         log.info("Path: {}", path);
@@ -112,15 +112,19 @@ public class RunIndexing {
 
     private void stopIndexingNow() {
         try {
-            if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
-                executor.shutdownNow();
-            }
+            forkJoinPool.awaitTermination(20, TimeUnit.SECONDS);
             forkJoinPool.shutdownNow();
+            executor.shutdownNow();
+//            if (!executor.awaitTermination(15, TimeUnit.SECONDS)) {
+//
+//            }
         } catch (InterruptedException e) {
             executor.shutdownNow();
         } finally {
+            log.info("Indexing stopped");
             RunIndexing.setRunning(false);
             RunIndexing.setShutdown(false);
+            refreshThreads();
         }
     }
 
@@ -148,6 +152,7 @@ public class RunIndexing {
     }
 
     public void refreshThreads() {
+        ForkJoinUtil.refreshForkJoinPool();
         forkJoinPool = ForkJoinUtil.forkJoinPool;
         executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(config.getSites().size());
     }

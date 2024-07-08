@@ -1,4 +1,4 @@
-package searchengine.services.implservices;
+package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -6,12 +6,10 @@ import org.springframework.stereotype.Service;
 import searchengine.dto.indexing.LemmaDto;
 import searchengine.model.Lemma;
 import searchengine.repositories.LemmaRepo;
-import searchengine.services.indexing_services.LemmaService;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -28,19 +26,7 @@ public class LemmaServiceImpl implements LemmaService<LemmaDto> {
     }
 
     @Override
-    public void save(LemmaDto lemmaDto) {
-        lemmaRepo.save(mapToEntity(lemmaDto));
-    }
-
-    @Override
-    public Integer saveAndReturnId(LemmaDto lemmaDto) {
-        Lemma lemma = mapToEntity(lemmaDto);
-        lemmaRepo.save(lemma);
-        return lemma.getId();
-    }
-
-    @Override
-    public void saveAll(Collection<LemmaDto> lemmas) {
+    public void addAll(Collection<LemmaDto> lemmas) {
         lemmaRepo.saveAll(lemmas.stream().map(LemmaServiceImpl::mapToEntity).toList());
     }
 

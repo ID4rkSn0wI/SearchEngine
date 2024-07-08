@@ -1,13 +1,11 @@
-package searchengine.services.implservices;
+package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.stereotype.Service;
 import searchengine.dto.indexing.PageDto;
 import searchengine.model.Page;
 import searchengine.repositories.PageRepo;
-import searchengine.services.indexing_services.PageService;
 
 import java.util.Collection;
 
@@ -34,12 +32,7 @@ public class PageServiceImpl implements PageService<PageDto> {
     }
 
     @Override
-    public void save(PageDto pageDto) {
-        pageRepo.save(mapToEntity(pageDto));
-    }
-
-    @Override
-    public Integer saveAndReturnId(PageDto pageDto) {
+    public Integer addAndReturnId(PageDto pageDto) {
         Page page = mapToEntity(pageDto);
         pageRepo.save(page);
         return page.getId();

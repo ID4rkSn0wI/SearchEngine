@@ -1,4 +1,4 @@
-package searchengine.services.implservices;
+package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,7 +7,6 @@ import searchengine.dto.indexing.SiteDto;
 import searchengine.model.Site;
 import searchengine.repositories.PageRepo;
 import searchengine.repositories.SiteRepo;
-import searchengine.services.indexing_services.SiteService;
 
 import java.util.Collection;
 
@@ -34,7 +33,7 @@ public class SiteServiceImpl implements SiteService<SiteDto> {
     }
 
     @Override
-    public void save(SiteDto site) {
+    public void add(SiteDto site) {
         log.info("Adding site: {}", site.getUrl());
         siteRepo.save(mapToEntity(site));
     }

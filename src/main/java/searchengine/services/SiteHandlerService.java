@@ -22,9 +22,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
 @Slf4j
 public class SiteHandlerService {
     private ConnectionProvider connectionProvider;
-    private static CopyOnWriteArraySet<String> uniquePaths = new CopyOnWriteArraySet<>();
-    private static Hashtable<String, LemmaDto> lemmasToSave = new Hashtable<>();
-    private static CopyOnWriteArraySet<IndexDto> indexesToSave = new CopyOnWriteArraySet<>();
+    private CopyOnWriteArraySet<String> uniquePaths = new CopyOnWriteArraySet<>();
+    private Hashtable<String, LemmaDto> lemmasToSave = new Hashtable<>();
+    private CopyOnWriteArraySet<IndexDto> indexesToSave = new CopyOnWriteArraySet<>();
     private static String pattern = "(.+(\\.(?i)(jpg|png|gif|bmp|pdf|jpeg|eps|xml|doc|xlx|xlsx|html))$)";
     private LuceneMorphologyService luceneMorphologyService;
     private TableServices tableServices;
@@ -79,7 +79,7 @@ public class SiteHandlerService {
         }
         pageDto.setCode(200);
         pageDto.setContent(document.html());
-        pageDto.setId(tableServices.getPageService().saveAndReturnId(pageDto));
+        pageDto.setId(tableServices.getPageService().addAndReturnId(pageDto));
         return document;
     }
 
@@ -140,7 +140,7 @@ public class SiteHandlerService {
     }
 
     public void saveAllLemmasAndIndexes() {
-        tableServices.getLemmaService().saveAll(lemmasToSave.values());
-        tableServices.getIndexService().saveAll(indexesToSave);
+        tableServices.getLemmaService().addAll(lemmasToSave.values());
+        tableServices.getIndexService().addAll(indexesToSave);
     }
 }

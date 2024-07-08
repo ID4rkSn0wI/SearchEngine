@@ -12,7 +12,7 @@ import searchengine.dto.answers.DefaultAnswer;
 import searchengine.dto.indexing.SiteDto;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.services.*;
-import searchengine.services.implservices.StatisticsServiceImpl;
+import searchengine.services.StatisticsServiceImpl;
 
 import java.net.URL;
 
@@ -44,13 +44,16 @@ public class ApiController {
 
     @GetMapping("/startIndexing")
     public ResponseEntity<?> startIndexing(Model model) {
-        RunIndexing.setShutdown(false);
         DefaultAnswer defaultAnswer = new DefaultAnswer();
         if (!RunIndexing.isRunning()) {
             RunIndexing.setRunning(true);
             runIndexing.startIndexing();
             defaultAnswer.setResult(true);
             return new ResponseEntity<>(defaultAnswer, HttpStatus.OK);
+        } else if (RunIndexing.isShutdown()) {
+            defaultAnswer.setResult(false);
+            defaultAnswer.setError("Индексация останавливается. Подождите.");
+            return new ResponseEntity<>(defaultAnswer, HttpStatus.BAD_REQUEST);
         }
         defaultAnswer.setResult(false);
         defaultAnswer.setError("Индексация уже запущена");
@@ -65,6 +68,7 @@ public class ApiController {
             runIndexing.stopIndexing();
             runIndexing.refreshThreads();
             defaultAnswer.setResult(true);
+            RunIndexing.setShutdown(true);
             return new ResponseEntity<>(defaultAnswer, HttpStatus.OK);
         }
         defaultAnswer.setResult(false);
@@ -74,7 +78,6 @@ public class ApiController {
 
     @PostMapping("/indexPage")
     public ResponseEntity<?> indexPage(URL url) {
-        RunIndexing.setShutdown(false);
         DefaultAnswer defaultAnswer = new DefaultAnswer();
         defaultAnswer.setResult(false);
         String root = url.getProtocol() + "://" + url.getHost();
@@ -91,9 +94,12 @@ public class ApiController {
                         "указанных в конфигурационном файле");
             }
             defaultAnswer.setError("Неверно указана ссылка на страницу");
-        } else {
-            defaultAnswer.setError("Индексация уже запущена");
+        } else if (RunIndexing.isShutdown()) {
+            defaultAnswer.setResult(false);
+            defaultAnswer.setError("Индексация останавливается. Подождите.");
+            return new ResponseEntity<>(defaultAnswer, HttpStatus.BAD_REQUEST);
         }
+        defaultAnswer.setError("Индексация уже запущена");
         return new ResponseEntity<>(defaultAnswer, HttpStatus.BAD_REQUEST);
     }
 

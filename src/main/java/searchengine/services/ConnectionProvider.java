@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import searchengine.dto.indexing.PageDto;
-import searchengine.services.implservices.PageServiceImpl;
 import searchengine.utils.RandomUserAgent;
 
 import java.io.IOException;
@@ -54,7 +53,7 @@ public class ConnectionProvider {
     public Document getDoc(PageDto pageDto) {
         Document document = null;
         try {
-            Thread.sleep(1000);
+            Thread.sleep(timeBetweenRequests);
             document = Jsoup.connect(pageDto.getRoot() + pageDto.getPath())
                     .userAgent(RandomUserAgent.getRandomUserAgent())
                     .maxBodySize(0)

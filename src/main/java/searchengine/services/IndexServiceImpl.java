@@ -1,4 +1,4 @@
-package searchengine.services.implservices;
+package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +14,7 @@ import java.util.Set;
 @Slf4j
 @RequiredArgsConstructor
 @Service
-public class IndexServiceImpl implements searchengine.services.indexing_services.IndexService<IndexDto> {
+public class IndexServiceImpl implements IndexService<IndexDto> {
     private final IndexRepo indexRepo;
 
     @Override
@@ -26,12 +26,7 @@ public class IndexServiceImpl implements searchengine.services.indexing_services
     }
 
     @Override
-    public void save(IndexDto indexDto) {
-        indexRepo.save(mapToEntity(indexDto));
-    }
-
-    @Override
-    public void saveAll(Collection<IndexDto> indexes) {
+    public void addAll(Collection<IndexDto> indexes) {
         indexRepo.saveAll(indexes.stream().map(IndexServiceImpl::mapToEntity).toList());
     }
 
