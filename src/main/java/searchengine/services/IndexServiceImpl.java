@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import searchengine.dto.indexing.IndexDto;
 import searchengine.model.Index;
 import searchengine.repositories.IndexRepo;
+import searchengine.repositories.LemmaRepo;
 
 import java.util.Collection;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.Set;
 @Service
 public class IndexServiceImpl implements IndexService<IndexDto> {
     private final IndexRepo indexRepo;
+    private final LemmaRepo lemmaRepo;
 
     @Override
     public Collection<IndexDto> getAll() {
@@ -26,7 +28,13 @@ public class IndexServiceImpl implements IndexService<IndexDto> {
     }
 
     @Override
-    public void addAll(Collection<IndexDto> indexes) {
+    public void save(IndexDto index) {
+        indexRepo.save(mapToEntity(index));
+    }
+
+    @Override
+    public void saveAll(Collection<IndexDto> indexes) {
+        indexes.forEach(i -> i.setLemmaId(lemmaRepo.findLemmaByLemmaAndSiteId(i.getLemma(), i.getSiteId()).getId()));
         indexRepo.saveAll(indexes.stream().map(IndexServiceImpl::mapToEntity).toList());
     }
 

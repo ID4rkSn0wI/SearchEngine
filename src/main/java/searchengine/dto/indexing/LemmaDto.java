@@ -22,7 +22,7 @@ public class LemmaDto {
     }
 
     @Override
-    public int hashCode() {
-        return this.lemma.hashCode() + Integer.toString(this.siteId).hashCode();
+    public String toString() {
+        return lemma + ":" + siteId;
     }
 }

@@ -5,7 +5,9 @@ import java.util.List;
 
 public interface LemmaService<T> {
     Collection<T> getAll();
-    void addAll(Collection<T> lemmas);
+    void save(T lemma);
+    Integer saveAndReturnId(T lemma);
+    void saveAll(Collection<T> lemmas);
     void update(T lemma);
     void delete(Integer id);
     T findLemmaDtoByLemmaAndSiteId(String lemma, int siteId);

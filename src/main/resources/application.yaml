@@ -8,7 +8,7 @@ spring:
     url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true&characterEncoding=utf8
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
       naming:
         implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
@@ -17,16 +17,23 @@ spring:
 config:
   request-properties:
     referrer: http://www.google.com
-  time-between-requests: 0
+  time-between-requests: 200
   amount-of-words: 8
 
 indexing-settings:
   sites:
     - url: https://www.svetlovka.ru
       name: Светловка
-#    - url: https://skillbox.ru
-#      name: Skillbox
+      limit: 500
+    - url: https://et-cetera.ru
+      name: El-cetera
+      limit: 500
+    - url: https://skillbox.ru
+      name: Skillbox
+      limit: 500
 #    - url: https://lenta.ru
 #      name: Лента.ру
+#      limit: 1000
 #    - url: https://playback.ru
 #      name: PlayBack.Ru
+#      limit: 1000

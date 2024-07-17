@@ -3,6 +3,7 @@ package searchengine.model;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 import javax.persistence.*;
 import javax.persistence.Index;
@@ -11,7 +12,7 @@ import javax.persistence.Index;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "lemma", indexes = @Index(columnList = "lemma", name = "lemma_index"))
+@Table(name = "lemma", uniqueConstraints = {@UniqueConstraint(columnNames = {"lemma", "site_id"})}, indexes = @Index(columnList = "lemma", name = "lemma_index"))
 public class Lemma {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

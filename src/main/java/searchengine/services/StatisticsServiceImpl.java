@@ -18,9 +18,6 @@ import java.util.Random;
 @Service
 @RequiredArgsConstructor
 public class StatisticsServiceImpl implements StatisticsService {
-
-    private final Random random = new Random();
-
     private SiteServiceImpl siteService;
     private PageServiceImpl pageService;
     private LemmaServiceImpl lemmaService;
@@ -47,14 +44,10 @@ public class StatisticsServiceImpl implements StatisticsService {
             DetailedStatisticsItem item = new DetailedStatisticsItem();
             item.setName(site.getName());
             item.setUrl(site.getUrl());
-            int pages = random.nextInt(1_000);
-            int lemmas = pages * random.nextInt(1_000);
             item.setPages(pageService.countBySiteId(site.getId()));
             item.setLemmas(lemmaService.countBySiteId(site.getId()));
             item.setStatus(site.getStatus());
-            if (site.getLastError() != null) {
-                item.setError(site.getLastError());
-            }
+            if (site.getLastError() != null) {item.setError(site.getLastError());}
             item.setStatusTime(site.getStatusTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
             detailed.add(item);
         }

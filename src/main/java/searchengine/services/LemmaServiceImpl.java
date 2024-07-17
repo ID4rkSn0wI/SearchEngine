@@ -26,7 +26,29 @@ public class LemmaServiceImpl implements LemmaService<LemmaDto> {
     }
 
     @Override
-    public void addAll(Collection<LemmaDto> lemmas) {
+    public void save(LemmaDto lemma) {
+        lemmaRepo.save(mapToEntity(lemma));
+    }
+
+    @Override
+    public Integer saveAndReturnId(LemmaDto lemmaDto) {
+        Lemma lemma = mapToEntity(lemmaDto);
+
+        if (lemmaRepo.findAll().contains(lemma)) {
+            lemmaRepo.incrementFrequency(lemmaDto.getLemma(), lemmaDto.getSiteId());
+        } else {
+            lemmaRepo.save(lemma);
+        }
+//        try {
+//
+//        } catch (DataIntegrityViolationException e) {
+//
+//        }
+        return lemma.getId();
+    }
+
+    @Override
+    public void saveAll(Collection<LemmaDto> lemmas) {
         lemmaRepo.saveAll(lemmas.stream().map(LemmaServiceImpl::mapToEntity).toList());
     }
 
@@ -42,7 +64,7 @@ public class LemmaServiceImpl implements LemmaService<LemmaDto> {
 
     @Override
     public LemmaDto findLemmaDtoByLemmaAndSiteId(String lemma, int siteId) {
-        Lemma lemmaEntity = lemmaRepo.findLemmaDtoByLemmaAndSiteId(lemma, siteId);
+        Lemma lemmaEntity = lemmaRepo.findLemmaByLemmaAndSiteId(lemma, siteId);
         if (lemmaEntity == null) {
             return new LemmaDto();
         }

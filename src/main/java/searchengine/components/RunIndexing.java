@@ -65,10 +65,11 @@ public class RunIndexing {
         if (siteAnswer != null) {
             siteDto.setLastError(siteAnswer);
             siteDto.setStatus(Status.FAILED);
-            tableServices.getSiteService().add(siteDto);
+            tableServices.getSiteService().save(siteDto);
             return;
         }
-        tableServices.getSiteService().add(siteDto);
+
+        tableServices.getSiteService().save(siteDto);
 
         PageDto pageDto = new PageDto();
         log.info("Path: {}", path);
@@ -78,7 +79,7 @@ public class RunIndexing {
         pageDto.setSubPaths(new HashSet<String>(0));
 
         long startTime = System.currentTimeMillis();
-        SiteHandlerService siteHandlerService = new SiteHandlerService(connectionProvider, luceneMorphologyService, tableServices);
+        SiteHandlerService siteHandlerService = new SiteHandlerService(connectionProvider, luceneMorphologyService, tableServices, config);
         RecursiveHandler recursiveHandler = new RecursiveHandler(pageDto, siteHandlerService);
         forkJoinPool.invoke(recursiveHandler);
 
@@ -106,18 +107,16 @@ public class RunIndexing {
     }
 
     public void stopIndexing() {
-        Executor executor = Executors.newSingleThreadExecutor();
-        executor.execute(this::stopIndexingNow);
+        Executor stopExecutor = Executors.newSingleThreadExecutor();
+        stopExecutor.execute(this::stopIndexingNow);
     }
 
     private void stopIndexingNow() {
         try {
-            forkJoinPool.awaitTermination(20, TimeUnit.SECONDS);
+            forkJoinPool.awaitTermination(30, TimeUnit.SECONDS);
             forkJoinPool.shutdownNow();
+            executor.awaitTermination(30, TimeUnit.SECONDS);
             executor.shutdownNow();
-//            if (!executor.awaitTermination(15, TimeUnit.SECONDS)) {
-//
-//            }
         } catch (InterruptedException e) {
             executor.shutdownNow();
         } finally {
@@ -139,7 +138,7 @@ public class RunIndexing {
             log.info("Found id: {}", id);
             pageDto.setId(id);
         }
-        new SiteHandlerService(connectionProvider, luceneMorphologyService, tableServices).handleSinglePage(pageDto);
+        new SiteHandlerService(connectionProvider, luceneMorphologyService, tableServices, config).handleSinglePage(pageDto);
         RunIndexing.setRunning(false);
     }
 

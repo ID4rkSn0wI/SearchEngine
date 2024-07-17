@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import searchengine.dto.answers.DefaultAnswer;
 import searchengine.dto.indexing.LemmaDto;
 import searchengine.dto.indexing.PageDto;
 import searchengine.dto.indexing.SiteDto;
@@ -40,7 +41,9 @@ public class SearchService {
             siteDto = tableServices.getSiteService().findSiteByUrl(siteUrl);
             if (siteDto == null) {
                 searchResponse.setResult(false);
-                searchResponse.setError("Invalid site url for: " + siteUrl);
+                searchResponse.setCount(0);
+                searchResponse.setData(new ArrayList<>());
+                searchResponse.setError("В конфигурации не найден сайт с такой ссылкой: " + siteUrl);
                 return new ResponseEntity<>(searchResponse, HttpStatus.BAD_REQUEST);
             }
             siteId = siteDto.getId();
@@ -53,7 +56,9 @@ public class SearchService {
         for (String word : wordsInQuery) {
             if (siteId != null) {
                 LemmaDto lemmaDto = tableServices.getLemmaService().findLemmaDtoByLemmaAndSiteId(word, siteId);
-                sortedSetLemmas.add(lemmaDto);
+                if (lemmaDto.getLemma() != null) {
+                    sortedSetLemmas.add(lemmaDto);
+                }
             } else {
                 List<LemmaDto> lemmaDtoList = tableServices.getLemmaService().findLemmasDtoByLemma(word);
                 sortedSetLemmas.addAll(lemmaDtoList);
@@ -69,6 +74,7 @@ public class SearchService {
             searchResponse.setCount(0);
             searchResponse.setResult(false);
             searchResponse.setData(new ArrayList<>());
+            searchResponse.setError("Ничего не найдено");
             return new ResponseEntity<>(searchResponse, HttpStatus.NOT_FOUND);
         }
         Map<Integer, Float> pagesRelevance = getPagesRelevance(filteredPageIds, sortedSetLemmas);
@@ -116,7 +122,10 @@ public class SearchService {
     }
 
     public String getSnippet(String text, Set<LemmaDto> lemmaInQuery) {
-        if (lemmaInQuery.isEmpty()){return null;}
+        if (lemmaInQuery.isEmpty()) {
+            return null;
+        }
+        log.info(text);
         List<String> words = List.of(text.toLowerCase().replaceAll("[^а-яёa-z]", " ").trim().split("\\s+"));
         List<String> defaultWords = List.of(text.replaceAll("[^а-яёА-ЯA-Za-zЁ]", " ").trim().split("\\s+"));
         Boolean[] foundIndexes = new Boolean[words.size()];
@@ -138,7 +147,9 @@ public class SearchService {
                 }
             }
             int index = StringUtils.indexOf(text, defaultWords.get(i), lastIndex);
-            if (index == -1) {index = StringUtils.indexOf(text, "<b>" + defaultWords.get(i) + "</b>", lastIndex);}
+            if (index == -1) {
+                index = StringUtils.indexOf(text, "<b>" + defaultWords.get(i) + "</b>", lastIndex);
+            }
             lastIndex = index;
             startIndexes[i] = index;
         }
@@ -148,7 +159,9 @@ public class SearchService {
                 maxCount = count;
                 start = i;
                 sameStart = i;
-            } else if (count == maxCount) {sameStart = i;}
+            } else if (count == maxCount) {
+                sameStart = i;
+            }
             else {
                 if ((sameStart - start) <= amountOfWords - 1 && sameStart > start) {
                     int division = (start + sameStart) / 2;

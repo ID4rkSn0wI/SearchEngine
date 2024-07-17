@@ -26,8 +26,11 @@ public class RecursiveHandler extends RecursiveAction {
         List<RecursiveAction> actions = new ArrayList<>();
         if (RunIndexing.isShutdown()) {return;}
         siteHandlerService.handlePage(pageDto);
-        if (RunIndexing.isShutdown()) {return;}
+        if (RunIndexing.isShutdown() ||
+                siteHandlerService.getUniquePaths().size() == siteHandlerService.getConfig().getLimits().get(pageDto.getRoot())) {
+            return;}
         for (String path : pageDto.getSubPaths()) {
+            if (RunIndexing.isShutdown()) {return;}
             PageDto pageDtoChild = new PageDto();
             pageDtoChild.setPath(path);
             pageDtoChild.setRoot(pageDto.getRoot());

@@ -47,9 +47,9 @@ public class LuceneMorphologyService {
             String normalWord = normalForms.get(0);
 
             if (lemmas.containsKey(normalWord)) {
-                lemmas.put(normalWord, lemmas.get(normalWord) + 1);
+                lemmas.put(normalWord.replaceAll("ё", "е"), lemmas.get(normalWord) + 1);
             } else {
-                lemmas.put(normalWord, 1);
+                lemmas.put(normalWord.replaceAll("ё", "е"), 1);
             }
         }
 

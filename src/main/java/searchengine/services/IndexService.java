@@ -6,7 +6,8 @@ import java.util.Set;
 
 public interface IndexService<T> {
     Collection<T> getAll();
-    void addAll(Collection<T> indexes);
+    void save(T index);
+    void saveAll(Collection<T> indexes);
     void update(T index);
     void delete(Integer id);
     void deleteAllByPageId(int pageId);
