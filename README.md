@@ -26,7 +26,7 @@ API со следующими основными функциями:
 (переиндексации), а также возможность добавить (обновить) отдельную
 страницу по ссылке:
 
-<img src="./src/main/resources/readme_support_data/management.png" width="80%"/><p>
+<img src="./src/main/resources/readme_support_data/MANAGMENT.png" width="80%"/><p>
 
 ### Вкладка SEARCH
 Эта страница предназначена для тестирования поискового
@@ -34,7 +34,7 @@ API со следующими основными функциями:
 сайта для поиска, а при нажатии на кнопку «Найти» выводятся
 результаты поиска (по API-запросу /api/search):
 
-<img src="./src/main/resources/readme_support_data/search.png" width="80%"/><p>
+<img src="./src/main/resources/readme_support_data/SEARCH.png" width="80%"/><p>
 
 ## Файл настройки - application.yaml
 Данное приложение работает с СУБД MySQL.
