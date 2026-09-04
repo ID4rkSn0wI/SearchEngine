@@ -26,7 +26,7 @@ API со следующими основными функциями:
 (переиндексации), а также возможность добавить (обновить) отдельную
 страницу по ссылке:
 
-<img src="./src/main/resources/readme_support_data/MANAGMENT.png" width="80%"/><p>
+<img src="./src/main/resources/readme_support_data/MANAGEMENT.png" width="80%"/><p>
 
 ### Вкладка SEARCH
 Эта страница предназначена для тестирования поискового
